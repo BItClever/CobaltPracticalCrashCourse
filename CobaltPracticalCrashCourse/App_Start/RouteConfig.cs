@@ -15,8 +15,8 @@ namespace CobaltPracticalCrashCourse
 
             routes.MapRoute(
                 name: "Default",
-                url: "{controller}/{action}/{*path}",
-                defaults: new { controller = "Home", action = "Explorer", path = UrlParameter.Optional }
+                url: "{drive}/{*path}",
+                defaults: new { controller = "Home", action = "Explorer", drive = UrlParameter.Optional, path = UrlParameter.Optional }
             );
         }
     }

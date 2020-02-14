@@ -1,4 +1,6 @@
-﻿using CobaltPracticalCrashCourse.Models;
+﻿using CobaltPracticalCrashCourse.Infrastructure;
+using CobaltPracticalCrashCourse.Models;
+using CobaltPracticalCrashCourse.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,36 +13,35 @@ namespace CobaltPracticalCrashCourse.Controllers
 {
     public class HomeController : Controller
     {
-
-        public ActionResult Explorer(string path)
+        private IExplorerService _explorerService;
+        public HomeController(IExplorerService explorerService)
         {
-            // var folderPath = AppDomain.CurrentDomain.BaseDirectory + "Folder\\";
-            var realPath = "D:\\" + path;
+            _explorerService = explorerService;
+        }
 
-            if (System.IO.File.Exists(realPath))
+        public ActionResult Explorer(string drive, string path)
+        {
+            var fullPath = string.Concat(drive, ":\\", path);
+            if (System.IO.File.Exists(fullPath))
             {
-                var fileBytes = System.IO.File.ReadAllBytes(realPath);
+                var fileBytes = System.IO.File.ReadAllBytes(fullPath);
                 return File(fileBytes, "application/downloads");
             }
-            else if (Directory.Exists(realPath))
+            else if (Directory.Exists(fullPath))
             {
-                List<DirModel> dirListModel = MapDirs(realPath);
-
-                List<FileModel> fileListModel = MapFiles(realPath);
-
-                ExplorerViewModel explorerModel = new ExplorerViewModel(dirListModel, fileListModel);
+                var dirListModel = _explorerService.MapDirs(fullPath);
+                var fileListModel = _explorerService.MapFiles(fullPath);
+                var explorerModel = new ExplorerViewModel(dirListModel, fileListModel);
 
                 //For using browser ability to correctly browsing the folders,
                 //Every path needs to end with slash
-                if (realPath.Last() != '/' && realPath.Last() != '\\')
-                { explorerModel.URL = "/Explorer/" + path + "/"; }
+                if (fullPath.Last() != '/' && fullPath.Last() != '\\')
+                { explorerModel.URL = "/Explorer/" + fullPath + "/"; }
                 else
-                { explorerModel.URL = "/Explorer/" + path; }
-
-                var request = HttpContext.Request;
+                { explorerModel.URL = "/Explorer/" + fullPath; }
 
                 UriBuilder uriBuilder = new UriBuilder
-                { Path = request.Path.ToString() };
+                { Path = HttpContext.Request.Path.ToString() };
 
                 //Show the current directory name using page URL.
                 explorerModel.FolderName = WebUtility.UrlDecode(uriBuilder.Uri.Segments.Last());
@@ -56,56 +57,9 @@ namespace CobaltPracticalCrashCourse.Controllers
             }
             else
             {
-                return Content(path + " is not a valid file or directory.");
+                return Content(fullPath + " is not a valid file or directory.");
             }
 
-        }
-
-        private List<DirModel> MapDirs(String realPath)
-        {
-            List<DirModel> dirListModel = new List<DirModel>();
-
-            IEnumerable<string> dirList = Directory.EnumerateDirectories(realPath);
-            foreach (string dir in dirList)
-            {
-                DirectoryInfo d = new DirectoryInfo(dir);
-
-                DirModel dirModel = new DirModel
-                {
-                    DirName = Path.GetFileName(dir),
-                    DirAccessed = d.LastAccessTime
-                };
-
-                dirListModel.Add(dirModel);
-            }
-
-            return dirListModel;
-        }
-
-        private List<FileModel> MapFiles(String realPath)
-        {
-            List<FileModel> fileListModel = new List<FileModel>();
-
-            IEnumerable<string> fileList = Directory.EnumerateFiles(realPath);
-            foreach (string file in fileList)
-            {
-                FileInfo f = new FileInfo(file);
-
-                FileModel fileModel = new FileModel();
-
-                if (f.Extension.ToLower() != "php" && f.Extension.ToLower() != "aspx"
-                    && f.Extension.ToLower() != "asp" && f.Extension.ToLower() != "exe")
-                {
-                    fileModel.FileName = Path.GetFileName(file);
-                    fileModel.FileAccessed = f.LastAccessTime;
-                    fileModel.FileSizeText = (f.Length < 1024) ?
-                                    f.Length.ToString() + " B" : f.Length / 1024 + " KB";
-
-                    fileListModel.Add(fileModel);
-                }
-            }
-
-            return fileListModel;
         }
 
         public ActionResult About()
