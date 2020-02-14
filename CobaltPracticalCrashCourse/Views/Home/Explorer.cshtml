@@ -1,0 +1,39 @@
+﻿
+@{
+    ViewBag.Title = "Explorer";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>@Model.FolderName</h2>
+
+@if (Model.URL.ToLower() != "/explorer/")
+{
+    <a title="Parent" href="@Model.ParentFolderName">
+        <img src="~/images/up.png" alt="Up" style="width: 20px; height: 20px; border: none" />
+    </a>
+}
+
+<ul>
+    @*Listing the directories *@
+    @foreach (CobaltPracticalCrashCourse.Models.DirModel dir in Model.DirModels)
+    {
+        <li>
+            <img src="~/images/folder.png" alt="Folder Logo" align="top" style="width: 20px;
+                height: 20px; border: none" />
+            <a href="@(Model.URL + dir.DirName)/" title="@dir.DirName">@dir.DirName</a>
+            . . . . . . @dir.DirAccessed
+        </li>
+    }
+    @*Listing the files *@
+    @foreach (CobaltPracticalCrashCourse.Models.FileModel file in Model.FileModels)
+    {
+        <li>
+            <a href="@(Model.URL + file.FileName)"
+               title="@file.FileName" target="_blank">
+                @file.FileName
+            </a>. . . . . . @file.FileSizeText
+            . . . . . . @file.FileAccessed
+        </li>
+    }
+</ul>
+
